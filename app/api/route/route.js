@@ -11,6 +11,13 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  // 🔑 Vérification CRITIQUE — indispensable en Edge Runtime
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    console.error('[CRITICAL] OPENROUTER_API_KEY manquante dans l’environnement');
+    return Response.json({ error: "Clé API absente" }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { prompt } = body;
@@ -25,13 +32,13 @@ export async function POST(request) {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`, // ← utilise la variable déjà vérifiée
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://legimedtravq.vercel.app',
         'X-Title': 'LegiMedTravQ - SST Algérie'
       },
       body: JSON.stringify({
-        model: 'qwen/qwen3-max', // ou 'openai/gpt-4o-mini' pour test
+        model: 'openai/gpt-4o-mini', // ⚠️ Change temporairement à gpt-4o-mini (plus fiable, gratuit)
         messages: [
           {
             role: 'system',
@@ -49,8 +56,11 @@ export async function POST(request) {
     if (!response.ok) {
       console.error('[OpenRouter] Error:', response.status, data);
       return Response.json(
-        { error: "Service temporairement indisponible.", debug: process.env.NODE_ENV === 'development' ? data : undefined },
-        { status: 503 }
+        { 
+          error: `OpenRouter ${response.status}: ${data?.error?.message || 'Unknown'}`,
+          debug: { status: response.status, body: data }
+        },
+        { status: response.status }
       );
     }
 
