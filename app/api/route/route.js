@@ -11,68 +11,46 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  // 🔑 Vérification CRITIQUE — indispensable en Edge Runtime
-  const apiKey = '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'; // ← ta vraie clé ici
-  console.log('🔑 API Key value:', JSON.stringify(apiKey)); // Affiche la valeur exacte (avec guillemets)
-  console.log('🔑 API Key length:', apiKey?.length);       // Affiche la longueur
-  console.log('🔑 API Key starts with "sk-or-v1-" ?', apiKey?.startsWith('sk-or-v1-'));
-  if (!apiKey) {
-    console.error('[CRITICAL] OPENROUTER_API_KEY manquante dans l’environnement');
-    return Response.json({ error: "Clé API absente" }, { status: 500 });
+  // 🔑 Clé à tester — remplace ici par ta VRAIE clé (celle qui commence par sk-or-v1-)
+  const apiKey = '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'; // ← VÉRIFIE qu’elle est exactement celle de OpenRouter
+
+  // 👀 Diagnostic sécurisé (masque tout sauf les 4 premiers et 4 derniers caractères)
+  const masked = apiKey ? `${apiKey.slice(0, 8)}...${apiKey.slice(-4)}` : '❌ undefined';
+  console.log('🔑 Masquée (dev):', masked);
+  console.log('✅ Format valide ?', apiKey?.startsWith('sk-or-v1-'));
+
+  if (!apiKey || !apiKey.startsWith('sk-or-v1-')) {
+    return Response.json({
+      error: 'Clé API invalide ou mal formatée',
+      hint: 'Doit commencer par "sk-or-v1-"'
+    }, { status: 400 });
   }
 
   try {
-    const body = await request.json();
-    const { prompt } = body;
-
-    if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-      return Response.json(
-        { error: "Veuillez fournir un prompt valide." },
-        { status: 400 }
-      );
-    }
-
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const { prompt } = await request.json();
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`, // ← utilise la variable déjà vérifiée
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://legimedtravq.vercel.app',
-        'X-Title': 'LegiMedTravQ - SST Algérie'
+        'HTTP-Referer': 'https://legimedtravq-proxy.vercel.app',
+        'X-Title': 'LegiMedTravQ'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini', // ⚠️ Change temporairement à gpt-4o-mini (plus fiable, gratuit)
-        messages: [
-          {
-            role: 'system',
-            content: 'Tu es un expert en SST en Algérie. Réponds concisément, avec rigueur juridique (citer les textes si possible).'
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 600
+        model: 'openai/gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt || 'Bonjour' }]
       })
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('[OpenRouter] Error:', response.status, data);
-      return Response.json(
-        { 
-          error: `OpenRouter ${response.status}: ${data?.error?.message || 'Unknown'}`,
-          debug: { status: response.status, body: data }
-        },
-        { status: response.status }
-      );
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('📡 OpenRouter erreur:', res.status, data);
+      return Response.json({ error: `OpenRouter ${res.status}`, debug: data }, { status: res.status });
     }
 
-    return Response.json({
-      reponse: data.choices?.[0]?.message?.content?.trim() || 'Aucune réponse générée.'
-    });
-
-  } catch (err) {
-    console.error('[Proxy Error]:', err);
-    return Response.json({ error: "Erreur interne." }, { status: 500 });
+    return Response.json({ reply: data.choices?.[0]?.message?.content?.trim() || 'OK' });
+  } catch (e) {
+    console.error('💥 Erreur:', e.message);
+    return Response.json({ error: 'Erreur interne', debug: e.message }, { status: 500 });
   }
-}// Fri Nov 14 19:29:06 CET 2025
+}
