@@ -1,7 +1,12 @@
 // next.config.js
+/** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverActions: true,
+  },
   env: {
-    const apiKey = process.env.OPENROUTER_API_KEY;(temporairement)
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
   },
 };
+
 module.exports = nextConfig;

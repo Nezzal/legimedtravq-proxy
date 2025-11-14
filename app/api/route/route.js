@@ -75,4 +75,4 @@ export async function POST(request) {
     console.error('[Proxy Error]:', err);
     return Response.json({ error: "Erreur interne." }, { status: 500 });
   }
-}
+}// Fri Nov 14 19:29:06 CET 2025
