@@ -13,6 +13,9 @@ export async function GET() {
 export async function POST(request) {
   // 🔑 Vérification CRITIQUE — indispensable en Edge Runtime
   const apiKey = process.env.OPENROUTER_API_KEY;
+  console.log('🔑 API Key value:', JSON.stringify(apiKey)); // Affiche la valeur exacte (avec guillemets)
+  console.log('🔑 API Key length:', apiKey?.length);       // Affiche la longueur
+  console.log('🔑 API Key starts with "sk-or-v1-" ?', apiKey?.startsWith('sk-or-v1-'));
   if (!apiKey) {
     console.error('[CRITICAL] OPENROUTER_API_KEY manquante dans l’environnement');
     return Response.json({ error: "Clé API absente" }, { status: 500 });
