@@ -12,7 +12,7 @@ export async function GET() {
 
 export async function POST(request) {
   // 🔑 Vérification CRITIQUE — indispensable en Edge Runtime
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = 'sk-or-v1c2344b6dcb53efd17c4b59eb5b8de8e11302d86ef5a580a80115f40b380738a8'; // ← ta vraie clé ici
   console.log('🔑 API Key value:', JSON.stringify(apiKey)); // Affiche la valeur exacte (avec guillemets)
   console.log('🔑 API Key length:', apiKey?.length);       // Affiche la longueur
   console.log('🔑 API Key starts with "sk-or-v1-" ?', apiKey?.startsWith('sk-or-v1-'));
